@@ -13,5 +13,7 @@
   1. 以 Selenium 動態爬取行政院公布之民生必需品賣場月均價參考資訊
   2. 下載並讀取 Google Trend CSV 檔資料
   3. 使用 matplotlib 套件繪製折線圖
-  <img src="https://github.com/Kay-Zhang1625/Python_Practice/blob/master/Final_Project/picture/structure.png" style="zoom:50%" />
   ```
+  架構流程圖：
+  <img src="https://github.com/Kay-Zhang1625/Python_Practice/blob/master/Final_Project/picture/structure.png" style="zoom:30%" />
+  <img src="https://github.com/Kay-Zhang1625/Python_Practice/blob/master/Final_Project/picture/all_brand.png" style="zoom:30%" />
