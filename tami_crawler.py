@@ -7,7 +7,9 @@ import time
 from lxml import etree
 
 
+# 此定義使用 pymysql 套件將資料傳入 MySQL，請先在 MySQL 裡建立好資料庫 "tami"
 def writeIntoDatabase(data):
+    # 建立資料庫連線
     conn = pymysql.connect(host='localhost',
                             user='root',
                             password='test',
@@ -18,6 +20,7 @@ def writeIntoDatabase(data):
     
     try:
         with conn.cursor() as cursor:
+            # 於資料庫中新建表 "tamoRowData"
             sql_createTb =  """
                             CREATE TABLE tamiRowData(
                                 公司名稱 varchar(60), 公司電話 varchar(50), 公司傳真 varchar(50), 公司地址 varchar(80),
@@ -26,9 +29,8 @@ def writeIntoDatabase(data):
                             );
                             """
             cursor.execute(sql_createTb)
-            # cursor.execute("SELECT @@global.sql_mode ='';")
             
-            # 打包傳入資料庫中
+            # 將資料打包傳入資料庫中
             sql_insertData = """
                             INSERT INTO tamiRowData (公司名稱, 公司電話, 公司傳真, 公司地址, 工廠電話, 工廠傳真, 工廠地址, 公司網址,
                                 資本額, 電子郵件, 員工人數, 主要產品) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
@@ -51,35 +53,51 @@ def writeIntoDatabase(data):
             cursor.executemany(sql_insertData, val)
             conn.commit()
     finally:
-        # 即便程式錯誤也會執行到這行關閉資料庫連線
         conn.close()
 
 
 if __name__ == "__main__":
+    t1 = time.time()
+    print('------ Start ------')
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36"}
-    res = requests.get(
-        "http://www.tami.org.tw/category/product-new1.php", headers=headers)
-    content = res.content.decode()
-    originHTML = etree.HTML(content)  # 原始HTML文件
-    categoryOne = originHTML.xpath("//a[@class='product-link']")  # 產品分類
-
+    
     linkList = {}
-
     categoryOneLinkList = []  # 產品分類URL列表
     categoryOneNameList = []
-    for index in range(len(categoryOne)):
-        categoryOneLink = categoryOne[index].get("href")
-        categoryOneLink = "http://www.tami.org.tw/category/" + categoryOneLink
-        categoryOneLinkList.append(categoryOneLink)
-        categoryOneName = re.findall(r"\s.+", categoryOne[index].text)[0].split()
-        categoryOneNameList.append(categoryOneName)
-        print(categoryOneName)
-        linkList[categoryOneName[0]] = {}
+    
+    for i in range(1, 5):
+        res = requests.get(
+            "http://www.tami.org.tw/category/product-new1.php?on=" + str(i), headers=headers)
+        content = res.content.decode()
+        originHTML = etree.HTML(content)  # 原始HTML文件
+
+        categoryOneA = originHTML.xpath("//a[@class='product-link']")  # 產品分類
+        for index in range(len(categoryOneA)):
+            categoryOneLink = categoryOneA[index].get("href")
+            categoryOneLink = "http://www.tami.org.tw/category/" + categoryOneLink
+            categoryOneLinkList.append(categoryOneLink)
+            categoryOneName = re.findall(r"\s.+", categoryOneA[index].text.strip())[0].split()
+            categoryOneNameList.append(categoryOneName)
+            linkList[categoryOneName[0]] = {}
+
+        try:
+            categoryOneB = originHTML.xpath("//a[@class='product-link2']")  # 產品分類
+            for index in range(len(categoryOneB)):
+                categoryOneLink = categoryOneB[index].get("href")
+                categoryOneLink = "http://www.tami.org.tw/category/" + categoryOneLink
+                categoryOneLinkList.append(categoryOneLink)
+                categoryOneName = re.findall(r"\s.+", categoryOneB[index].text.strip())[0].split()
+                categoryOneNameList.append(categoryOneName)
+                linkList[categoryOneName[0]] = {}
+        except:
+            pass
+
 
     time.sleep(2)
-    print(linkList)
-    print('-----------')
+    # print(linkList)
+
+    print('------ 正在爬取第二層資料 ------')
 
     # 產品分類第二層
     for indexOne in range(len(categoryOneLinkList)):
@@ -87,8 +105,6 @@ if __name__ == "__main__":
         contentTwo = resTwo.content.decode()
         originHTMLTwo = etree.HTML(contentTwo)  # 原始HTML文件
         categoryTwo = originHTMLTwo.xpath("//a[@class='product-link']")  # 產品分類
-        
-        # linkList[indexOne] = {}
     
         categoryTwoLinkList = []  # 產品分類URL列表
         categoryTwoNameList = []
@@ -98,10 +114,7 @@ if __name__ == "__main__":
             categoryTwoLinkList.append(categoryTwoLink)
             categoryTwoName = re.findall(r"\s.+", categoryTwo[indexTwo].text)[0].split()
             categoryTwoNameList.append(categoryTwoName)
-            # print(categoryTwoName)
             linkList[categoryOneNameList[indexOne][0]][categoryTwoName[0]] = {}
-
-            # linkList[indexOne][indexTwo] = {}
 
         time.sleep(2)
 
@@ -141,7 +154,9 @@ if __name__ == "__main__":
                 except:
                     pass
 
-
-    print('------start------')
+    print('------ 資料爬取完畢 ------')
+    print('------ 資料正在匯入 MySQL ------')
     writeIntoDatabase(linkList)
-    print('------end------')
+    print('------ End ------')
+    t2 = time.time()
+    print('總共耗時' + str(round(t2-t1), 2) + '秒')
