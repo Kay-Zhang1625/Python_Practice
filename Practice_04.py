@@ -35,24 +35,24 @@ def productDetail(link):
     resp = requests.post(link, headers=headers)
     soup = BeautifulSoup(resp.text, 'html.parser')
     
-    store = soup.select_one('a#bylineInfo').text
-    store_link = 'https://www.amazon.com' + soup.find('a', id='bylineInfo', href=True).get('href')
-    price = soup.select_one('span#priceblock_saleprice').text
+    # store = soup.select_one('a#bylineInfo').text
+    # store_link = 'https://www.amazon.com' + soup.find('a', id='bylineInfo', href=True).get('href')
+    # price = soup.select_one('span#priceblock_saleprice').text
     star = soup.select_one('span.a-size-medium.a-color-base').text
-    # reviews_mentioned_s = soup.select('div.a-fixed-left-grid-col.a-col-right').find_all('div.#cr-dp-desktop-lighthut')
+    reviews_mentioned_s = soup.find(id='reviewsMedley').find(class_='a-fixed-left-grid-col a-col-right').find(class_='cr-lazy-widget cr-summarization-lighthut')
     # reviews_mentioned = []
     # for i in reviews_mentioned_s:
-    #     reviews = i.select('a span')
+    #     reviews = i.select('span a')
     #     reviews_mentioned.append(reviews)
 
-    data = {}
-    data['store'] = store
-    data['store_link'] = store_link
-    data['price'] = price
-    data['star'] = star
+    # data = {}
+    # data['store'] = store
+    # data['store_link'] = store_link
+    # data['price'] = price
+    # data['star'] = star
     # data['reviews_mentioned'] = reviews_mentioned[0]
 
-    return data
+    return star, reviews_mentioned_s
 
 
 # def getDetailInfo():
